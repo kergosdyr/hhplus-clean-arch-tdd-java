@@ -39,7 +39,7 @@ spotless {
         importOrder()
         removeUnusedImports()
         cleanthat()
-        palantirJavaFormat().style("GOOGLE")
+        palantirJavaFormat()
         formatAnnotations()
     }
 }
