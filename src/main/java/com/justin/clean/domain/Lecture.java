@@ -65,8 +65,16 @@ public class Lecture {
         this.attendeeCount++;
     }
 
+    public boolean isAttendAvailable() {
+        return this.attendeeCount < 30;
+    }
+
     public boolean isLectureExpired(LocalDateTime registeredAt) {
         return this.lectureDate.isBefore(registeredAt.toLocalDate())
                 || this.lectureDate.isEqual(registeredAt.toLocalDate());
+    }
+
+    public boolean isAttendNotAvailable() {
+        return !isAttendAvailable();
     }
 }

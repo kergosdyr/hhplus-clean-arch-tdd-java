@@ -16,6 +16,8 @@ public class LectureService {
 
     private final LectureRegisterSaver lectureRegisterSaver;
 
+    private final LectureRegisterLoader lectureRegisterLoader;
+
     private final LectureLoader lectureLoader;
 
     @Transactional
@@ -23,7 +25,11 @@ public class LectureService {
 
         Lecture lecture = lectureLoader.load(lectureRegister.getLectureId());
 
-        if (lecture.isLectureExpired(lectureRegister.getRegisteredAt())) {
+        if (lectureRegisterLoader.hasDuplicateRegisterBy(lectureRegister.getUserId(), lectureRegister.getLectureId())) {
+            throw new ApiException(ErrorType.DUPLICATE_REGISTER_ERROR);
+        }
+
+        if (lecture.isAttendNotAvailable() || lecture.isLectureExpired(lectureRegister.getRegisteredAt())) {
             throw new ApiException(ErrorType.REGISTER_OVER_ERROR);
         }
 
