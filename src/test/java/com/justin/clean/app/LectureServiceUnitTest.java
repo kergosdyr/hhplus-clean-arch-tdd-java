@@ -27,6 +27,9 @@ class LectureServiceUnitTest {
     private LectureRegisterSaver lectureRegisterSaver;
 
     @Mock
+    private LectureRegisterLoader lectureRegisterLoader;
+
+    @Mock
     private LectureLoader lectureLoader;
 
     @InjectMocks
@@ -38,7 +41,26 @@ class LectureServiceUnitTest {
     }
 
     @Test
-    @DisplayName("등록 시 강의가 만료된 경우 ApiException을 던진다")
+    @DisplayName("등록 시 이미 등록된 경우 ApiException을 던진다")
+    void registerShouldThrowExceptionWhenAlreadyRegistered() {
+        // given
+        long userId = 1L;
+        long lectureId = 2L;
+        LectureRegister lectureRegister =
+                LectureRegister.builder().userId(userId).lectureId(lectureId).build();
+
+        when(lectureRegisterLoader.hasDuplicateRegisterBy(userId, lectureId)).thenReturn(true);
+
+        // when & then
+        assertThatThrownBy(() -> lectureService.register(lectureRegister))
+                .isInstanceOf(ApiException.class)
+                .hasMessage(ErrorType.DUPLICATE_REGISTER_ERROR.getMessage());
+
+        verify(lectureRegisterLoader, times(1)).hasDuplicateRegisterBy(userId, lectureId);
+    }
+
+    @Test
+    @DisplayName("등록 시 강의가 만석이거나 만료된 경우 ApiException을 던진다")
     void registerShouldThrowExceptionWhenLectureFullOrExpired() {
         // given
         long userId = 1L;
@@ -56,6 +78,7 @@ class LectureServiceUnitTest {
                 .lectureDate(LocalDate.of(2024, 12, 19))
                 .build();
 
+        when(lectureRegisterLoader.hasDuplicateRegisterBy(userId, lectureId)).thenReturn(false);
         when(lectureLoader.load(lectureId)).thenReturn(lecture);
 
         // when & then
@@ -63,6 +86,7 @@ class LectureServiceUnitTest {
                 .isInstanceOf(ApiException.class)
                 .hasMessage(ErrorType.REGISTER_OVER_ERROR.getMessage());
 
+        verify(lectureRegisterLoader, times(1)).hasDuplicateRegisterBy(userId, lectureId);
         verify(lectureLoader, times(1)).load(lectureId);
         verifyNoInteractions(lectureRegisterSaver);
     }
@@ -93,6 +117,7 @@ class LectureServiceUnitTest {
                 .registeredAt(registeredAt)
                 .build();
 
+        when(lectureRegisterLoader.hasDuplicateRegisterBy(userId, lectureId)).thenReturn(false);
         when(lectureLoader.load(lectureId)).thenReturn(lecture);
         when(lectureRegisterSaver.save(lectureRegister)).thenReturn(savedRegister);
 
@@ -102,6 +127,7 @@ class LectureServiceUnitTest {
         // then
         assertThat(result).isEqualTo(savedRegister);
         assertThat(lecture.getAttendeeCount()).isEqualTo(30); // 참석자가 +1 증가했는지 확인
+        verify(lectureRegisterLoader, times(1)).hasDuplicateRegisterBy(userId, lectureId);
         verify(lectureLoader, times(1)).load(lectureId);
         verify(lectureRegisterSaver, times(1)).save(lectureRegister);
     }
