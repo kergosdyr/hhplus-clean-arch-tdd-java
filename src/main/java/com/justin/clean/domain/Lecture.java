@@ -11,6 +11,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+
+import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -40,6 +42,10 @@ public class Lecture {
 
     @Column
     private LocalDate lectureDate;
+
+    @Column
+    @Version
+    private long version;
 
     @ManyToOne
     @JoinColumn(

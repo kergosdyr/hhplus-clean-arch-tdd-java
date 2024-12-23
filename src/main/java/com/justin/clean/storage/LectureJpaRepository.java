@@ -12,7 +12,7 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface LectureJpaRepository extends JpaRepository<Lecture, Long> {
 
-    @Lock(LockModeType.PESSIMISTIC_READ)
+
     @Query("select l from Lecture l where l.id = ?1")
     Optional<Lecture> findByIdWithLock(long id);
 

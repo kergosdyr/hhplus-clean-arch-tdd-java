@@ -6,7 +6,13 @@ import com.justin.clean.error.ApiException;
 import com.justin.clean.error.ErrorType;
 import java.time.LocalDate;
 import java.util.List;
+
+import jakarta.persistence.OptimisticLockException;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +26,11 @@ public class LectureService {
 
     private final LectureLoader lectureLoader;
 
+    @Retryable(
+        value = {OptimisticLockException.class, ObjectOptimisticLockingFailureException.class},
+        maxAttempts = 6, // 재시도 횟수
+        backoff = @Backoff(delay = 30, multiplier = 1.2) // 재시도 간격(밀리초 단위)
+    )
     @Transactional
     public LectureRegister register(LectureRegister lectureRegister) {
 
