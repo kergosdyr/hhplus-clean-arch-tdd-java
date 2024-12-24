@@ -7,7 +7,7 @@ import java.util.function.Supplier;
 
 public class ConcurrencyTestUtil {
 
-    public static <T> ConcurrencyTestResult<T> runConcurrentTest(
+    public static <T> ConcurrencyTestResult<T> run(
             int threadPoolSize,
             Supplier<T> taskSupplier
     ) throws InterruptedException {
@@ -36,11 +36,11 @@ public class ConcurrencyTestUtil {
             this.futures = futures;
         }
 
-        public long countSuccess(Supplier<Boolean> successCriteria) {
+        public long success() {
             return futures.stream()
                     .filter(f -> {
                         try {
-                            return successCriteria.get();
+                            return (boolean)f.get();
                         } catch (Exception e) {
                             return false;
                         }
@@ -48,11 +48,11 @@ public class ConcurrencyTestUtil {
                     .count();
         }
 
-        public long countFailure(Supplier<Boolean> successCriteria) {
+        public long fail() {
             return futures.stream()
                     .filter(f -> {
                         try {
-                            return !successCriteria.get();
+                            return !(boolean)f.get();
                         } catch (Exception e) {
                             return false;
                         }

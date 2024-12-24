@@ -3,6 +3,7 @@ package com.justin.clean.app;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.justin.clean.config.ConcurrencyTestUtil;
 import com.justin.clean.config.IntegrationTest;
 import com.justin.clean.config.LectureRegisterTestDataBuilder;
 import com.justin.clean.config.LectureTestDataBuilder;
@@ -19,6 +20,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -134,62 +137,25 @@ class LectureServiceIntegrationTest extends IntegrationTest {
         var lecture = LectureTestDataBuilder.defaultVal();
         Lecture savedLecture = lectureJpaRepository.save(lecture);
 
-        int totalRequests = 40;
-        ExecutorService executorService = Executors.newFixedThreadPool(40);
-        CountDownLatch latch = new CountDownLatch(1);
-        List<Future<Boolean>> futures = new ArrayList<>();
+        AtomicLong userId = new AtomicLong(0);
 
-        // when
-        for (int i = 0; i < totalRequests; i++) {
-            final long userId = i + 1;
-            futures.add(executorService.submit(() -> {
-                try {
-                    latch.await();
-                    var lectureRegister = LectureRegister.builder()
-                            .userId(userId)
-                            .lectureId(savedLecture.getId())
-                            .registeredAt(LocalDateTime.of(2024, 12, 19, 10, 0))
-                            .build();
-                    lectureService.register(lectureRegister);
-
-                    return true;
-                } catch (ApiException e) {
-                    if (e.getErrorType() == ErrorType.REGISTER_OVER_ERROR) {
-                        return false;
-                    }
-                    throw e;
+        var result = ConcurrencyTestUtil.run(40, () -> {
+            try {
+                var lectureRegister = new LectureRegisterTestDataBuilder().withUserId(userId.getAndIncrement()).build();
+                lectureService.register(lectureRegister);
+                return true;
+            } catch (ApiException e) {
+                if (e.getErrorType() == ErrorType.REGISTER_OVER_ERROR) {
+                    return false;
                 }
-            }));
-        }
-
-        latch.countDown();
-        executorService.shutdown();
-        executorService.awaitTermination(10, TimeUnit.SECONDS);
-
-        // then
-        long successCount = futures.stream()
-                .filter(future -> {
-                    try {
-                        return future.get();
-                    } catch (Exception e) {
-                        return false;
-                    }
-                })
-                .count();
-
-        long failureCount = futures.stream()
-                .filter(future -> {
-                    try {
-                        return !future.get();
-                    } catch (Exception e) {
-                        return false;
-                    }
-                })
-                .count();
+                throw e;
+            }
+        });
 
         var updatedLecture = lectureJpaRepository.findById(savedLecture.getId()).orElseThrow();
-        assertThat(successCount).isEqualTo(30);
-        assertThat(failureCount).isEqualTo(10);
+
+        assertThat(result.success()).isEqualTo(30);
+        assertThat(result.fail()).isEqualTo(10);
         assertThat(updatedLecture.getAttendeeCount()).isEqualTo(30);
     }
 
@@ -197,66 +163,27 @@ class LectureServiceIntegrationTest extends IntegrationTest {
     @DisplayName("동일한 유저 정보로 같은 특강을 5번 신청했을 때, 1번만 성공한다")
     void shouldAllowOnlyOneRegistrationForSameUser() throws InterruptedException {
         // given
-        var lecture = Lecture.builder()
-                .lectureDate(LocalDate.of(2024, 12, 20))
-                .attendeeCount(0)
-                .build();
+        var lecture = LectureTestDataBuilder.defaultVal();
         lectureJpaRepository.save(lecture);
 
-        ExecutorService executorService = Executors.newFixedThreadPool(5);
-        CountDownLatch latch = new CountDownLatch(1);
-        List<Future<Boolean>> futures = new ArrayList<>();
-
         // when
-        for (int i = 0; i < 5; i++) {
-            futures.add(executorService.submit(() -> {
-                try {
-                    latch.await();
-                    var lectureRegister = LectureRegister.builder()
-                            .userId(1L)
-                            .lectureId(lecture.getId())
-                            .registeredAt(LocalDateTime.of(2024, 12, 19, 10, 0))
-                            .build();
-                    lectureService.register(lectureRegister);
-                    return true;
-                } catch (ApiException e) {
-                    if (e.getErrorType() == ErrorType.DUPLICATE_REGISTER_ERROR) {
-                        return false;
-                    }
-                    throw e;
+        var result = ConcurrencyTestUtil.run(5, () -> {
+            try {
+                var lectureRegister = LectureRegisterTestDataBuilder.defaultVal();
+                lectureService.register(lectureRegister);
+                return true;
+            } catch (ApiException e) {
+                if (e.getErrorType() == ErrorType.DUPLICATE_REGISTER_ERROR) {
+                    return false;
                 }
-            }));
-        }
-
-        latch.countDown();
-        executorService.shutdown();
-        executorService.awaitTermination(10, TimeUnit.SECONDS);
-
-        // then
-        long successCount = futures.stream()
-                .filter(f -> {
-                    try {
-                        return f.get();
-                    } catch (Exception e) {
-                        return false;
-                    }
-                })
-                .count();
-
-        long failureCount = futures.stream()
-                .filter(f -> {
-                    try {
-                        return !f.get();
-                    } catch (Exception e) {
-                        return false;
-                    }
-                })
-                .count();
+                throw e;
+            }
+        });
 
         var updatedLecture = lectureJpaRepository.findById(lecture.getId()).orElseThrow();
 
-        assertThat(successCount).isEqualTo(1);
-        assertThat(failureCount).isEqualTo(4);
+        assertThat(result.success()).isEqualTo(1);
+        assertThat(result.fail()).isEqualTo(4);
         assertThat(updatedLecture.getAttendeeCount()).isEqualTo(1);
     }
 }
