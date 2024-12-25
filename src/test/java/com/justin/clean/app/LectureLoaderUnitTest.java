@@ -13,16 +13,16 @@ import com.justin.clean.config.LectureTestDataBuilder;
 import com.justin.clean.domain.Lecture;
 import com.justin.clean.error.ApiException;
 import com.justin.clean.error.ErrorType;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class LectureLoaderUnitTest {
 
     @Mock
@@ -33,11 +33,6 @@ class LectureLoaderUnitTest {
 
     @InjectMocks
     private LectureLoader lectureLoader;
-
-    @BeforeEach
-    public void LectureLoaderTest() {
-        MockitoAnnotations.openMocks(this);
-    }
 
     @Test
     @DisplayName("강의 ID로 강의를 로드할 때 강의가 존재하지 않으면 ApiException이 발생한다")
@@ -73,8 +68,8 @@ class LectureLoaderUnitTest {
         // given
         List<Lecture> givenLectures = LectureTestDataBuilder.defaultMultiple();
 
-
-        when(lectureRegisterRepository.findAllBy(DEFAULT_ID)).thenReturn(LectureRegisterTestDataBuilder.multiple(givenLectures));
+        when(lectureRegisterRepository.findAllBy(DEFAULT_ID))
+                .thenReturn(LectureRegisterTestDataBuilder.multiple(givenLectures));
 
         // when
         List<Lecture> lectures = lectureLoader.loadRegistered(DEFAULT_ID);
@@ -88,9 +83,10 @@ class LectureLoaderUnitTest {
     @DisplayName("특정 날짜 기준으로 사용 가능한 강의를 로드할 때 강의 목록이 반환된다")
     void loadAllAvailableByShouldReturnAvailableLecturesForDate() {
         // given
-		List<Lecture> givenLectures = LectureTestDataBuilder.defaultMultiple();
+        List<Lecture> givenLectures = LectureTestDataBuilder.defaultMultiple();
 
-        when(lectureRepository.findAllAvailableByLectureDate(DEFAULT_LECTURE_DATE)).thenReturn(givenLectures);
+        when(lectureRepository.findAllAvailableByLectureDate(DEFAULT_LECTURE_DATE))
+                .thenReturn(givenLectures);
 
         // when
         List<Lecture> lectures = lectureLoader.loadAllAvailableBy(DEFAULT_LECTURE_DATE);

@@ -1,12 +1,10 @@
 package com.justin.clean.config;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-
 import com.justin.clean.domain.Lecture;
 import com.justin.clean.domain.LectureRegister;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.StreamSupport;
 
 public class LectureRegisterTestDataBuilder {
 
@@ -19,7 +17,7 @@ public class LectureRegisterTestDataBuilder {
     private Long userId = DEFAULT_USER_ID;
     private Long lectureId = DEFAULT_LECTURE_ID;
     private LocalDateTime registeredAt = DEFAULT_REGISTERED_AT;
-    private Lecture lecture = LectureTestDataBuilder.defaultVal();
+    private Lecture lecture = null;
 
     /**
      * 체이닝 메서드 예시
@@ -49,14 +47,20 @@ public class LectureRegisterTestDataBuilder {
         return this;
     }
 
+    public LectureRegisterTestDataBuilder asExpired() {
+        this.registeredAt =
+                LectureTestDataBuilder.DEFAULT_LECTURE_DATE.plusDays(1).atStartOfDay();
+        return this;
+    }
+
     public LectureRegister build() {
         return LectureRegister.builder()
-            .id(this.id)
-            .userId(this.userId)
-            .lectureId(this.lectureId)
-            .registeredAt(this.registeredAt)
-            .lecture(this.lecture)
-            .build();
+                .id(this.id)
+                .userId(this.userId)
+                .lectureId(this.lectureId)
+                .registeredAt(this.registeredAt)
+                .lecture(this.lecture)
+                .build();
     }
 
     /**
@@ -64,12 +68,25 @@ public class LectureRegisterTestDataBuilder {
      */
     public static LectureRegister defaultVal() {
         return LectureRegister.builder()
-            .id(DEFAULT_ID)
-            .userId(DEFAULT_USER_ID)
-            .lectureId(DEFAULT_LECTURE_ID)
-            .registeredAt(DEFAULT_REGISTERED_AT)
-            .lecture(LectureTestDataBuilder.defaultVal())
-            .build();
+                .id(DEFAULT_ID)
+                .userId(DEFAULT_USER_ID)
+                .lectureId(DEFAULT_LECTURE_ID)
+                .registeredAt(DEFAULT_REGISTERED_AT)
+                .lecture(LectureTestDataBuilder.defaultVal())
+                .build();
+    }
+
+    /**
+     * 기본값 빌더
+     */
+    public static LectureRegister defaultWithLectureId(long lectureId) {
+        return LectureRegister.builder()
+                .id(DEFAULT_ID)
+                .userId(DEFAULT_USER_ID)
+                .lectureId(lectureId)
+                .registeredAt(DEFAULT_REGISTERED_AT)
+                .lecture(LectureTestDataBuilder.defaultVal())
+                .build();
     }
 
     /**
@@ -77,23 +94,13 @@ public class LectureRegisterTestDataBuilder {
      */
     public static LectureRegister defaultExpired() {
         return LectureRegister.builder()
-            .id(DEFAULT_ID)
-            .userId(DEFAULT_USER_ID)
-            .lectureId(DEFAULT_LECTURE_ID)
-            .registeredAt(LectureTestDataBuilder.DEFAULT_LECTURE_DATE.plusDays(1).atStartOfDay())
-            .lecture(LectureTestDataBuilder.defaultVal())
-            .build();
-    }
-
-    /**
-     * 여러 Lecture 객체에 대해서 각각 LectureRegister 생성
-     */
-    public static List<LectureRegister> multiple(Lecture... lectures) {
-        return Stream.of(lectures)
-            .map(lecture -> new LectureRegisterTestDataBuilder()
-                .withLecture(lecture)
-                .build())
-            .toList();
+                .id(DEFAULT_ID)
+                .userId(DEFAULT_USER_ID)
+                .lectureId(DEFAULT_LECTURE_ID)
+                .registeredAt(
+                        LectureTestDataBuilder.DEFAULT_LECTURE_DATE.plusDays(1).atStartOfDay())
+                .lecture(LectureTestDataBuilder.defaultVal())
+                .build();
     }
 
     /**
@@ -101,9 +108,10 @@ public class LectureRegisterTestDataBuilder {
      */
     public static List<LectureRegister> multiple(Iterable<Lecture> lectures) {
         return StreamSupport.stream(lectures.spliterator(), false)
-            .map(lecture -> new LectureRegisterTestDataBuilder()
-                .withLecture(lecture)
-                .build())
-            .toList();
+                .map(lecture -> new LectureRegisterTestDataBuilder()
+                        .withLectureId(lecture.getId())
+                        .withLecture(lecture)
+                        .build())
+                .toList();
     }
 }

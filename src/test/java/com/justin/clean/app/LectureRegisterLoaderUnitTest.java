@@ -7,13 +7,14 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class LectureRegisterLoaderUnitTest {
 
     @Mock
@@ -22,16 +23,12 @@ class LectureRegisterLoaderUnitTest {
     @InjectMocks
     private LectureRegisterLoader lectureRegisterLoader;
 
-    @BeforeEach
-    public void LectureRegisterLoaderTest() {
-        MockitoAnnotations.openMocks(this);
-    }
-
     @Test
     @DisplayName("사용자와 강의 ID로 등록 가능 여부를 확인할 때 이미 등록된 경우 true를 반환한다")
     void hasDuplicateRegisterByShouldReturnTrueWhenAlreadyRegistered() {
         // given
-        when(lectureRegisterRepository.existsById(DEFAULT_USER_ID, DEFAULT_LECTURE_ID)).thenReturn(true);
+        when(lectureRegisterRepository.existsById(DEFAULT_USER_ID, DEFAULT_LECTURE_ID))
+                .thenReturn(true);
 
         // when
         boolean result = lectureRegisterLoader.hasDuplicateRegisterBy(DEFAULT_USER_ID, DEFAULT_LECTURE_ID);
@@ -45,7 +42,8 @@ class LectureRegisterLoaderUnitTest {
     @DisplayName("사용자와 강의 ID로 등록 가능 여부를 확인할 때 등록되지 않은 경우 false를 반환한다")
     void hasDuplicateRegisterByShouldReturnFalseWhenNotRegistered() {
         // given
-        when(lectureRegisterRepository.existsById(DEFAULT_USER_ID, DEFAULT_LECTURE_ID)).thenReturn(false);
+        when(lectureRegisterRepository.existsById(DEFAULT_USER_ID, DEFAULT_LECTURE_ID))
+                .thenReturn(false);
 
         // when
         boolean result = lectureRegisterLoader.hasDuplicateRegisterBy(DEFAULT_USER_ID, DEFAULT_LECTURE_ID);

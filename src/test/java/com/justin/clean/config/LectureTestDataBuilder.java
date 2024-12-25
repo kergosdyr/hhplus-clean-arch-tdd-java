@@ -1,9 +1,8 @@
 package com.justin.clean.config;
 
+import com.justin.clean.domain.Lecture;
 import java.time.LocalDate;
 import java.util.List;
-
-import com.justin.clean.domain.Lecture;
 
 public class LectureTestDataBuilder {
     public static final int ATTENDEE_DEFAULT = 0;
@@ -56,22 +55,32 @@ public class LectureTestDataBuilder {
 
     public static Lecture defaultVal() {
         return Lecture.builder()
-            .id(DEFAULT_ID)
-            .lectureDate(DEFAULT_LECTURE_DATE)
-            .attendeeCount(ATTENDEE_DEFAULT)
-            .build();
+                .id(DEFAULT_ID)
+                .lectureDate(DEFAULT_LECTURE_DATE)
+                .attendeeCount(ATTENDEE_DEFAULT)
+                .build();
+    }
+
+    public static Lecture defaultForJpa() {
+        return Lecture.builder()
+                .lectureDate(DEFAULT_LECTURE_DATE)
+                .attendeeCount(ATTENDEE_DEFAULT)
+                .build();
     }
 
     public static Lecture defaultWithId(long id) {
         return Lecture.builder()
-            .id(id)
-            .lectureDate(DEFAULT_LECTURE_DATE)
-            .attendeeCount(ATTENDEE_DEFAULT)
-            .build();
+                .id(id)
+                .lectureDate(DEFAULT_LECTURE_DATE)
+                .attendeeCount(ATTENDEE_DEFAULT)
+                .build();
     }
 
     public static List<Lecture> defaultMultiple() {
         return List.of(defaultVal(), defaultWithId(2L));
     }
 
+    public static List<Lecture> defaultMultipleForJpa() {
+        return List.of(defaultForJpa(), defaultForJpa());
+    }
 }

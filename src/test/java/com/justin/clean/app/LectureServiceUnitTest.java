@@ -1,6 +1,5 @@
 package com.justin.clean.app;
 
-import static com.justin.clean.config.LectureRegisterTestDataBuilder.DEFAULT_ID;
 import static com.justin.clean.config.LectureRegisterTestDataBuilder.DEFAULT_LECTURE_ID;
 import static com.justin.clean.config.LectureRegisterTestDataBuilder.DEFAULT_USER_ID;
 import static com.justin.clean.config.LectureTestDataBuilder.DEFAULT_LECTURE_DATE;
@@ -17,16 +16,15 @@ import com.justin.clean.domain.Lecture;
 import com.justin.clean.domain.LectureRegister;
 import com.justin.clean.error.ApiException;
 import com.justin.clean.error.ErrorType;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class LectureServiceUnitTest {
 
     @Mock
@@ -41,18 +39,14 @@ class LectureServiceUnitTest {
     @InjectMocks
     private LectureService lectureService;
 
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-    }
-
     @Test
     @DisplayName("등록 시 이미 등록된 경우 ApiException을 던진다")
     void registerShouldThrowExceptionWhenAlreadyRegistered() {
         // given
         LectureRegister lectureRegister = LectureRegisterTestDataBuilder.defaultVal();
 
-        when(lectureRegisterLoader.hasDuplicateRegisterBy(DEFAULT_USER_ID, DEFAULT_LECTURE_ID)).thenReturn(true);
+        when(lectureRegisterLoader.hasDuplicateRegisterBy(DEFAULT_USER_ID, DEFAULT_LECTURE_ID))
+                .thenReturn(true);
 
         // when & then
         assertThatThrownBy(() -> lectureService.register(lectureRegister))
@@ -69,7 +63,8 @@ class LectureServiceUnitTest {
         var lectureRegister = LectureRegisterTestDataBuilder.defaultExpired();
         var lecture = LectureTestDataBuilder.defaultVal();
 
-        when(lectureRegisterLoader.hasDuplicateRegisterBy(DEFAULT_USER_ID, DEFAULT_LECTURE_ID)).thenReturn(false);
+        when(lectureRegisterLoader.hasDuplicateRegisterBy(DEFAULT_USER_ID, DEFAULT_LECTURE_ID))
+                .thenReturn(false);
         when(lectureLoader.load(DEFAULT_LECTURE_ID)).thenReturn(lecture);
 
         // when & then
@@ -89,7 +84,8 @@ class LectureServiceUnitTest {
         var lectureRegister = LectureRegisterTestDataBuilder.defaultVal();
         var lecture = LectureTestDataBuilder.defaultVal();
 
-        when(lectureRegisterLoader.hasDuplicateRegisterBy(DEFAULT_USER_ID, DEFAULT_LECTURE_ID)).thenReturn(false);
+        when(lectureRegisterLoader.hasDuplicateRegisterBy(DEFAULT_USER_ID, DEFAULT_LECTURE_ID))
+                .thenReturn(false);
         when(lectureLoader.load(DEFAULT_LECTURE_ID)).thenReturn(lecture);
         when(lectureRegisterSaver.save(lectureRegister)).thenReturn(lectureRegister);
 

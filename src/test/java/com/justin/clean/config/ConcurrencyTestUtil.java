@@ -7,10 +7,8 @@ import java.util.function.Supplier;
 
 public class ConcurrencyTestUtil {
 
-    public static <T> ConcurrencyTestResult<T> run(
-            int threadPoolSize,
-            Supplier<T> taskSupplier
-    ) throws InterruptedException {
+    public static <T> ConcurrencyTestResult<T> run(int threadPoolSize, Supplier<T> taskSupplier)
+            throws InterruptedException {
         ExecutorService executorService = Executors.newFixedThreadPool(threadPoolSize);
         CountDownLatch latch = new CountDownLatch(1);
         List<Future<T>> futures = new ArrayList<>();
@@ -40,7 +38,7 @@ public class ConcurrencyTestUtil {
             return futures.stream()
                     .filter(f -> {
                         try {
-                            return (boolean)f.get();
+                            return (boolean) f.get();
                         } catch (Exception e) {
                             return false;
                         }
@@ -52,7 +50,7 @@ public class ConcurrencyTestUtil {
             return futures.stream()
                     .filter(f -> {
                         try {
-                            return !(boolean)f.get();
+                            return !(boolean) f.get();
                         } catch (Exception e) {
                             return false;
                         }
