@@ -1,9 +1,8 @@
 package com.justin.clean.error;
 
+import lombok.Getter;
 import org.springframework.boot.logging.LogLevel;
 import org.springframework.http.HttpStatus;
-
-import lombok.Getter;
 
 @Getter
 public enum ErrorType {

@@ -22,5 +22,4 @@ public class ErrorMessage {
         this.message = errorType.getMessage();
         this.data = data;
     }
-
 }

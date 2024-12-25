@@ -2,18 +2,17 @@ package com.justin.clean.web.support;
 
 import com.justin.clean.error.ErrorMessage;
 import com.justin.clean.error.ErrorType;
-
 import lombok.Getter;
 
 public class ApiResponse<S> {
 
     @Getter
-	private final ResultType result;
+    private final ResultType result;
 
     private final S data;
 
     @Getter
-	private final ErrorMessage error;
+    private final ErrorMessage error;
 
     private ApiResponse(ResultType result, S data, ErrorMessage error) {
         this.result = result;
@@ -37,8 +36,7 @@ public class ApiResponse<S> {
         return new ApiResponse<>(ResultType.ERROR, null, new ErrorMessage(error, errorData));
     }
 
-	public Object getData() {
+    public Object getData() {
         return data;
     }
-
 }

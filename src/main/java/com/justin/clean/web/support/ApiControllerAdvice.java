@@ -1,13 +1,12 @@
 package com.justin.clean.web.support;
 
+import com.justin.clean.error.ApiException;
+import com.justin.clean.error.ErrorType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-import com.justin.clean.error.ApiException;
-import com.justin.clean.error.ErrorType;
 
 @RestControllerAdvice
 public class ApiControllerAdvice {
