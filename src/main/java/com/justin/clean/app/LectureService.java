@@ -16,7 +16,7 @@ public class LectureService {
 
     private final LectureRegisterSaver lectureRegisterSaver;
 
-    private final LectureRegisterLoader lectureRegisterLoader;
+    private final LectureRegisterValidator lectureRegisterValidator;
 
     private final LectureLoader lectureLoader;
 
@@ -25,9 +25,7 @@ public class LectureService {
 
         Lecture lecture = lectureLoader.load(lectureRegister.getLectureId());
 
-        if (lectureRegisterLoader.hasDuplicateRegisterBy(lectureRegister.getUserId(), lectureRegister.getLectureId())) {
-            throw new ApiException(ErrorType.DUPLICATE_REGISTER_ERROR);
-        }
+        lectureRegisterValidator.validate(lectureRegister.getUserId(), lectureRegister.getLectureId());
 
         if (lecture.isAttendNotAvailable() || lecture.isLectureExpired(lectureRegister.getRegisteredAt())) {
             throw new ApiException(ErrorType.REGISTER_OVER_ERROR);

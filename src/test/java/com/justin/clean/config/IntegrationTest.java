@@ -1,9 +1,9 @@
 package com.justin.clean.config;
 
 import com.justin.clean.app.LectureLoader;
-import com.justin.clean.app.LectureRegisterLoader;
 import com.justin.clean.app.LectureRegisterRepository;
 import com.justin.clean.app.LectureRegisterSaver;
+import com.justin.clean.app.LectureRegisterValidator;
 import com.justin.clean.app.LectureRepository;
 import com.justin.clean.app.LectureService;
 import com.justin.clean.storage.LectureJpaRepository;
@@ -22,7 +22,7 @@ public class IntegrationTest {
     protected LectureLoader lectureLoader;
 
     @Autowired
-    protected LectureRegisterLoader lectureRegisterLoader;
+    protected LectureRegisterValidator lectureRegisterValidator;
 
     @Autowired
     protected LectureRegisterSaver lectureRegisterSaver;

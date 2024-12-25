@@ -43,7 +43,9 @@ class LectureServiceIntegrationTest extends IntegrationTest {
 
         Lecture savedLecture = lectureJpaRepository.save(lecture);
 
-        var lectureRegister = new LectureRegisterTestDataBuilder().withLectureId(savedLecture.getId()).build();
+        var lectureRegister = new LectureRegisterTestDataBuilder()
+                .withLectureId(savedLecture.getId())
+                .build();
 
         // when & then
         assertThatThrownBy(() -> lectureService.register(lectureRegister))

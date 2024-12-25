@@ -5,6 +5,7 @@ import static com.justin.clean.config.LectureRegisterTestDataBuilder.DEFAULT_USE
 import static com.justin.clean.config.LectureTestDataBuilder.DEFAULT_LECTURE_DATE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -31,7 +32,7 @@ class LectureServiceUnitTest {
     private LectureRegisterSaver lectureRegisterSaver;
 
     @Mock
-    private LectureRegisterLoader lectureRegisterLoader;
+    private LectureRegisterValidator lectureRegisterValidator;
 
     @Mock
     private LectureLoader lectureLoader;
@@ -45,15 +46,16 @@ class LectureServiceUnitTest {
         // given
         LectureRegister lectureRegister = LectureRegisterTestDataBuilder.defaultVal();
 
-        when(lectureRegisterLoader.hasDuplicateRegisterBy(DEFAULT_USER_ID, DEFAULT_LECTURE_ID))
-                .thenReturn(true);
+        doThrow(new ApiException(ErrorType.DUPLICATE_REGISTER_ERROR))
+                .when(lectureRegisterValidator)
+                .validate(DEFAULT_USER_ID, DEFAULT_LECTURE_ID);
 
         // when & then
         assertThatThrownBy(() -> lectureService.register(lectureRegister))
                 .isInstanceOf(ApiException.class)
                 .hasMessage(ErrorType.DUPLICATE_REGISTER_ERROR.getMessage());
 
-        verify(lectureRegisterLoader, times(1)).hasDuplicateRegisterBy(DEFAULT_USER_ID, DEFAULT_LECTURE_ID);
+        verify(lectureRegisterValidator, times(1)).validate(DEFAULT_USER_ID, DEFAULT_LECTURE_ID);
     }
 
     @Test
@@ -63,8 +65,10 @@ class LectureServiceUnitTest {
         var lectureRegister = new LectureRegisterTestDataBuilder().asExpired().build();
         var lecture = LectureTestDataBuilder.defaultVal();
 
-        when(lectureRegisterLoader.hasDuplicateRegisterBy(DEFAULT_USER_ID, DEFAULT_LECTURE_ID))
-                .thenReturn(false);
+        doThrow(new ApiException(ErrorType.REGISTER_OVER_ERROR))
+                .when(lectureRegisterValidator)
+                .validate(DEFAULT_USER_ID, DEFAULT_LECTURE_ID);
+
         when(lectureLoader.load(DEFAULT_LECTURE_ID)).thenReturn(lecture);
 
         // when & then
@@ -72,7 +76,7 @@ class LectureServiceUnitTest {
                 .isInstanceOf(ApiException.class)
                 .hasMessage(ErrorType.REGISTER_OVER_ERROR.getMessage());
 
-        verify(lectureRegisterLoader, times(1)).hasDuplicateRegisterBy(DEFAULT_USER_ID, DEFAULT_LECTURE_ID);
+        verify(lectureRegisterValidator, times(1)).validate(DEFAULT_USER_ID, DEFAULT_LECTURE_ID);
         verify(lectureLoader, times(1)).load(DEFAULT_LECTURE_ID);
         verifyNoInteractions(lectureRegisterSaver);
     }
@@ -84,8 +88,6 @@ class LectureServiceUnitTest {
         var lectureRegister = LectureRegisterTestDataBuilder.defaultVal();
         var lecture = LectureTestDataBuilder.defaultVal();
 
-        when(lectureRegisterLoader.hasDuplicateRegisterBy(DEFAULT_USER_ID, DEFAULT_LECTURE_ID))
-                .thenReturn(false);
         when(lectureLoader.load(DEFAULT_LECTURE_ID)).thenReturn(lecture);
         when(lectureRegisterSaver.save(lectureRegister)).thenReturn(lectureRegister);
 
@@ -95,7 +97,7 @@ class LectureServiceUnitTest {
         // then
         assertThat(result).isEqualTo(lectureRegister);
         assertThat(lecture.getAttendeeCount()).isEqualTo(LectureTestDataBuilder.ATTENDEE_DEFAULT + 1);
-        verify(lectureRegisterLoader, times(1)).hasDuplicateRegisterBy(DEFAULT_USER_ID, DEFAULT_LECTURE_ID);
+        verify(lectureRegisterValidator, times(1)).validate(DEFAULT_USER_ID, DEFAULT_LECTURE_ID);
         verify(lectureLoader, times(1)).load(DEFAULT_LECTURE_ID);
         verify(lectureRegisterSaver, times(1)).save(lectureRegister);
     }
