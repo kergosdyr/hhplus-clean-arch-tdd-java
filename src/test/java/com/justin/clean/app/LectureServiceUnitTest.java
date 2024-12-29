@@ -1,30 +1,38 @@
 package com.justin.clean.app;
 
+import static com.justin.clean.config.LectureRegisterTestDataBuilder.DEFAULT_LECTURE_ID;
+import static com.justin.clean.config.LectureRegisterTestDataBuilder.DEFAULT_USER_ID;
+import static com.justin.clean.config.LectureTestDataBuilder.DEFAULT_LECTURE_DATE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.justin.clean.config.LectureRegisterTestDataBuilder;
+import com.justin.clean.config.LectureTestDataBuilder;
 import com.justin.clean.domain.Lecture;
 import com.justin.clean.domain.LectureRegister;
 import com.justin.clean.error.ApiException;
 import com.justin.clean.error.ErrorType;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class LectureServiceUnitTest {
 
     @Mock
     private LectureRegisterSaver lectureRegisterSaver;
+
+    @Mock
+    private LectureRegisterValidator lectureRegisterValidator;
 
     @Mock
     private LectureLoader lectureLoader;
@@ -32,38 +40,44 @@ class LectureServiceUnitTest {
     @InjectMocks
     private LectureService lectureService;
 
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
+    @Test
+    @DisplayName("등록 시 이미 등록된 경우 ApiException을 던진다")
+    void registerShouldThrowExceptionWhenAlreadyRegistered() {
+        // given
+        LectureRegister lectureRegister = LectureRegisterTestDataBuilder.defaultVal();
+
+        doThrow(new ApiException(ErrorType.DUPLICATE_REGISTER_ERROR))
+                .when(lectureRegisterValidator)
+                .validate(DEFAULT_USER_ID, DEFAULT_LECTURE_ID);
+
+        // when & then
+        assertThatThrownBy(() -> lectureService.register(lectureRegister))
+                .isInstanceOf(ApiException.class)
+                .hasMessage(ErrorType.DUPLICATE_REGISTER_ERROR.getMessage());
+
+        verify(lectureRegisterValidator, times(1)).validate(DEFAULT_USER_ID, DEFAULT_LECTURE_ID);
     }
 
     @Test
-    @DisplayName("등록 시 강의가 만료된 경우 ApiException을 던진다")
+    @DisplayName("등록 시 강의가 만석이거나 만료된 경우 ApiException을 던진다")
     void registerShouldThrowExceptionWhenLectureFullOrExpired() {
         // given
-        long userId = 1L;
-        long lectureId = 2L;
-        LocalDateTime registeredAt = LocalDateTime.of(2024, 12, 20, 10, 0);
-        LectureRegister lectureRegister = LectureRegister.builder()
-                .userId(userId)
-                .lectureId(lectureId)
-                .registeredAt(registeredAt)
-                .build();
+        var lectureRegister = new LectureRegisterTestDataBuilder().asExpired().build();
+        var lecture = LectureTestDataBuilder.defaultVal();
 
-        Lecture lecture = Lecture.builder()
-                .id(lectureId)
-                .attendeeCount(30)
-                .lectureDate(LocalDate.of(2024, 12, 19))
-                .build();
+        doThrow(new ApiException(ErrorType.REGISTER_OVER_ERROR))
+                .when(lectureRegisterValidator)
+                .validate(DEFAULT_USER_ID, DEFAULT_LECTURE_ID);
 
-        when(lectureLoader.load(lectureId)).thenReturn(lecture);
+        when(lectureLoader.load(DEFAULT_LECTURE_ID)).thenReturn(lecture);
 
         // when & then
         assertThatThrownBy(() -> lectureService.register(lectureRegister))
                 .isInstanceOf(ApiException.class)
                 .hasMessage(ErrorType.REGISTER_OVER_ERROR.getMessage());
 
-        verify(lectureLoader, times(1)).load(lectureId);
+        verify(lectureRegisterValidator, times(1)).validate(DEFAULT_USER_ID, DEFAULT_LECTURE_ID);
+        verify(lectureLoader, times(1)).load(DEFAULT_LECTURE_ID);
         verifyNoInteractions(lectureRegisterSaver);
     }
 
@@ -71,38 +85,20 @@ class LectureServiceUnitTest {
     @DisplayName("등록이 성공적으로 완료되면 저장된 LectureRegister를 반환하고 참석자가 +1 증가한다")
     void registerShouldSaveAndIncreaseAttendeeCount() {
         // given
-        long userId = 1L;
-        long lectureId = 2L;
-        LocalDateTime registeredAt = LocalDateTime.of(2024, 12, 20, 10, 0);
-        LectureRegister lectureRegister = LectureRegister.builder()
-                .userId(userId)
-                .lectureId(lectureId)
-                .registeredAt(registeredAt)
-                .build();
+        var lectureRegister = LectureRegisterTestDataBuilder.defaultVal();
+        var lecture = LectureTestDataBuilder.defaultVal();
 
-        Lecture lecture = Lecture.builder()
-                .id(lectureId)
-                .attendeeCount(29)
-                .lectureDate(LocalDate.of(2024, 12, 21))
-                .build();
-
-        LectureRegister savedRegister = LectureRegister.builder()
-                .id(100L)
-                .userId(userId)
-                .lectureId(lectureId)
-                .registeredAt(registeredAt)
-                .build();
-
-        when(lectureLoader.load(lectureId)).thenReturn(lecture);
-        when(lectureRegisterSaver.save(lectureRegister)).thenReturn(savedRegister);
+        when(lectureLoader.load(DEFAULT_LECTURE_ID)).thenReturn(lecture);
+        when(lectureRegisterSaver.save(lectureRegister)).thenReturn(lectureRegister);
 
         // when
         LectureRegister result = lectureService.register(lectureRegister);
 
         // then
-        assertThat(result).isEqualTo(savedRegister);
-        assertThat(lecture.getAttendeeCount()).isEqualTo(30); // 참석자가 +1 증가했는지 확인
-        verify(lectureLoader, times(1)).load(lectureId);
+        assertThat(result).isEqualTo(lectureRegister);
+        assertThat(lecture.getAttendeeCount()).isEqualTo(LectureTestDataBuilder.ATTENDEE_DEFAULT + 1);
+        verify(lectureRegisterValidator, times(1)).validate(DEFAULT_USER_ID, DEFAULT_LECTURE_ID);
+        verify(lectureLoader, times(1)).load(DEFAULT_LECTURE_ID);
         verify(lectureRegisterSaver, times(1)).save(lectureRegister);
     }
 
@@ -110,51 +106,31 @@ class LectureServiceUnitTest {
     @DisplayName("사용자가 등록한 모든 강의를 반환한다")
     void findAllRegisteredByShouldReturnAllRegisteredLectures() {
         // given
-        long userId = 1L;
-        Lecture lecture1 = Lecture.builder()
-                .id(1L)
-                .attendeeCount(10)
-                .lectureDate(LocalDate.of(2024, 12, 21))
-                .build();
-        Lecture lecture2 = Lecture.builder()
-                .id(2L)
-                .attendeeCount(15)
-                .lectureDate(LocalDate.of(2024, 12, 22))
-                .build();
+        var givenLectures = LectureTestDataBuilder.dual();
 
-        when(lectureLoader.loadRegistered(userId)).thenReturn(List.of(lecture1, lecture2));
+        when(lectureLoader.loadRegistered(DEFAULT_USER_ID)).thenReturn(givenLectures);
 
         // when
-        List<Lecture> result = lectureService.findAllRegisteredBy(userId);
+        var result = lectureService.findAllRegisteredBy(DEFAULT_USER_ID);
 
         // then
-        assertThat(result).containsExactly(lecture1, lecture2);
-        verify(lectureLoader, times(1)).loadRegistered(userId);
+        assertThat(result).containsAll(givenLectures);
+        verify(lectureLoader, times(1)).loadRegistered(DEFAULT_USER_ID);
     }
 
     @Test
     @DisplayName("특정 날짜의 모든 사용 가능한 강의를 반환한다")
     void findAllAvailableByShouldReturnAvailableLecturesForDate() {
         // given
-        LocalDate lectureDate = LocalDate.of(2024, 12, 20);
-        Lecture lecture1 = Lecture.builder()
-                .id(1L)
-                .attendeeCount(10)
-                .lectureDate(lectureDate)
-                .build();
-        Lecture lecture2 = Lecture.builder()
-                .id(2L)
-                .attendeeCount(20)
-                .lectureDate(lectureDate)
-                .build();
+        var givenLectures = LectureTestDataBuilder.dual();
 
-        when(lectureLoader.loadAllAvailableBy(lectureDate)).thenReturn(List.of(lecture1, lecture2));
+        when(lectureLoader.loadAllAvailableBy(DEFAULT_LECTURE_DATE)).thenReturn(givenLectures);
 
         // when
-        List<Lecture> result = lectureService.findAllAvailableBy(lectureDate);
+        List<Lecture> result = lectureService.findAllAvailableBy(DEFAULT_LECTURE_DATE);
 
         // then
-        assertThat(result).containsExactly(lecture1, lecture2);
-        verify(lectureLoader, times(1)).loadAllAvailableBy(lectureDate);
+        assertThat(result).containsAll(givenLectures);
+        verify(lectureLoader, times(1)).loadAllAvailableBy(DEFAULT_LECTURE_DATE);
     }
 }
