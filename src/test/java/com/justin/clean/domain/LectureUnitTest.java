@@ -10,6 +10,38 @@ import org.junit.jupiter.api.Test;
 class LectureUnitTest {
 
     @Test
+    @DisplayName("참석자가 30명 이상인 경우 추가 참석 가능 여부는 false 이다")
+    void isAttendAvailableShouldBeFalseWhenAttendeeCountIs30OrMore() {
+        Lecture lecture = Lecture.builder().attendeeCount(30).build();
+
+        assertThat(lecture.isAttendAvailable()).isEqualTo(false);
+    }
+
+    @Test
+    @DisplayName("참석자가 30명 미만인 경우 추가 참석 가능 여부는 true 이다")
+    void isAttendAvailableShouldBeTrueWhenAttendeeCountIsLessThan30() {
+        Lecture lecture = Lecture.builder().attendeeCount(29).build();
+
+        assertThat(lecture.isAttendAvailable()).isEqualTo(true);
+    }
+
+    @Test
+    @DisplayName("참석자가 30명 이상인 경우 추가 참석 불가능 여부는 true 이다")
+    void isAttendNotAvailableShouldBeTrueWhenAttendeeCountIs30OrMore() {
+        Lecture lecture = Lecture.builder().attendeeCount(30).build();
+
+        assertThat(lecture.isAttendNotAvailable()).isEqualTo(true);
+    }
+
+    @Test
+    @DisplayName("참석자가 30명 미만인 경우 추가 참석 불가능 여부는 false 이다")
+    void isAttendNotAvailableShouldBeFalseWhenAttendeeCountIsLessThan30() {
+        Lecture lecture = Lecture.builder().attendeeCount(29).build();
+
+        assertThat(lecture.isAttendNotAvailable()).isEqualTo(false);
+    }
+
+    @Test
     @DisplayName("강의 날짜가 등록 요청시간 날짜보다 미래인 경우 강의 Expired 여부는 false 이다")
     void isLectureExpiredShouldBeFalseWhenLectureDateIsInFuture() {
         Lecture lecture =
